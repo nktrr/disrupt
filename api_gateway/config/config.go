@@ -44,7 +44,7 @@ func InitConfig() (*Config, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "os.Getwd")
 			}
-			configPath = fmt.Sprintf("%s/api_gateway_service/config/config.yaml", getwd)
+			configPath = fmt.Sprintf("%s/api_gateway/config/config.yaml", getwd)
 		}
 	}
 

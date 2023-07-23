@@ -1,4 +1,4 @@
-serviceName: api_gateway_service
+serviceName: api_gateway
 http:
   port: :5001
   development: true

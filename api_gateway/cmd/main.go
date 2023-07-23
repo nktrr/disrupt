@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"disrupt/api_gateway/config"
@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	println("start")
 	flag.Parse()
 
 	cfg, err := config.InitConfig()

@@ -10,5 +10,6 @@ COPY ./ ./
 RUN go install -mod=mod github.com/githubnemo/CompileDaemon
 RUN go mod download
 
-ENTRYPOINT CompileDaemon --build="go build api_gateway/cmd/main.go" --command= RUN ["chmod", "+x", "./main"]
+
+ENTRYPOINT CompileDaemon --build="go build api_gateway/cmd/main.go" --command=./main
 
