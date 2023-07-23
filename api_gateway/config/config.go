@@ -13,8 +13,8 @@ import (
 var configPath string
 
 type Config struct {
-	Logger      *logger.Config `mapstructure:"logger"`
 	ServiceName string         `mapstructure:"serviceName"`
+	Logger      *logger.Config `mapstructure:"logger"`
 	KafkaTopics KafkaTopics    `mapstructure:"kafkaTopics"`
 	Kafka       *kafka.Config  `mapstructure:"kafka"`
 	Http        Http           `mapstructure:"http"`
@@ -31,6 +31,7 @@ type Http struct {
 }
 
 type KafkaTopics struct {
+	ParseGithub kafka.TopicConfig `mapstructure:"parseGithub"`
 }
 
 func InitConfig() (*Config, error) {

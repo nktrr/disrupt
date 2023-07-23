@@ -1,0 +1,21 @@
+serviceName: api_gateway_service
+http:
+  port: :5001
+  development: true
+  basePath: /api
+  debugHeaders: false
+  httpClientDebug: false
+  debugErrorsResponse: true
+  ignoreLogUrls: [ "metrics" ]
+logger:
+  level: debug
+  devMode: false
+  encoder: json
+kafka:
+  brokers: [ "localhost:9092" ]
+  groupID: api_gateway_consumer
+kafkaTopics:
+  parseGithub:
+    topicName: parse_github
+    partitions: 5
+    replicationFactor: 1
