@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"disrupt/api_gateway/config"
-	v1 "disrupt/api_gateway/internal/delivery/http"
 	"disrupt/pkg/kafka"
 	"disrupt/pkg/logger"
 	"github.com/labstack/echo"
@@ -13,9 +12,10 @@ import (
 )
 
 type server struct {
-	log  logger.Logger
-	cfg  *config.Config
-	echo *echo.Echo
+	log      logger.Logger
+	cfg      *config.Config
+	echo     *echo.Echo
+	handlers *handlers
 }
 
 func NewServer(log logger.Logger, cfg *config.Config) *server {
@@ -31,9 +31,8 @@ func (s *server) Run() error {
 	defer cancel()
 	kafkaProducer := kafka.NewProducer(s.log, s.cfg.Kafka.Brokers)
 	defer kafkaProducer.Close()
-	handlers := v1.NewHandlers(s.echo.Group(s.cfg.Http.BasePath), s.log, s.cfg)
-	handlers.MapRoutes()
-
+	s.handlers = NewHandlers(s.echo.Group(s.cfg.Http.BasePath), s.log, s.cfg)
+	s.handlers.MapRoutes()
 	go func() {
 		if err := s.echo.Start(s.cfg.Http.Port); err != nil {
 			s.log.Errorf(" s.runHttpServer: %v", err)

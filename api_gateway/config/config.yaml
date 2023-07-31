@@ -1,6 +1,6 @@
 serviceName: api_gateway
 http:
-  port: :5001
+  port: :3001
   development: true
   basePath: /api
   debugHeaders: false
