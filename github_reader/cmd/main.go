@@ -2,10 +2,9 @@ package main
 
 import (
 	"archive/zip"
+	"disrupt/github_reader/internal/server"
 	"fmt"
 	"io"
-	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,33 +14,35 @@ const ZIP_TEMP_DIR = "C:\\disrupt\\zip"
 const DIR_TEMP = "C:\\disrupt\\unzip"
 
 func main() {
+	server := server.NewServer()
+	server.Run()
 
-	profile := "nktrr"
-	repository := "disrupt_old"
-	baseUrl := "https://api.github.com/repos"
-	baseUrl += "/" + profile
-	baseUrl += "/" + repository
-	url := baseUrl + "/zipball/master"
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-	zipName := profile + "-" + repository + ".zip"
-
-	out, err := os.Create(filepath.Join(ZIP_TEMP_DIR, zipName))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	err = Unzip(filepath.Join(ZIP_TEMP_DIR, zipName), filepath.Join(DIR_TEMP, "nktrr"))
-	if err != nil {
-		println(err.Error())
-	}
+	//profile := "nktrr"
+	//repository := "disrupt_old"
+	//baseUrl := "https://api.github.com/repos"
+	//baseUrl += "/" + profile
+	//baseUrl += "/" + repository
+	//url := baseUrl + "/zipball/master"
+	//resp, err := http.Get(url)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer resp.Body.Close()
+	//if resp.StatusCode != http.StatusOK {
+	//	return
+	//}
+	//zipName := profile + "-" + repository + ".zip"
+	//
+	//out, err := os.Create(filepath.Join(ZIP_TEMP_DIR, zipName))
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer out.Close()
+	//_, err = io.Copy(out, resp.Body)
+	//err = Unzip(filepath.Join(ZIP_TEMP_DIR, zipName), filepath.Join(DIR_TEMP, "nktrr"))
+	//if err != nil {
+	//	println(err.Error())
+	//}
 }
 
 func Unzip(src, dest string) error {
