@@ -3,19 +3,24 @@ package server
 import (
 	"context"
 	"disrupt/api_gateway/config"
+	kafka2 "disrupt/pkg/kafka"
 	"disrupt/pkg/logger"
 	"github.com/labstack/echo"
 	"github.com/segmentio/kafka-go"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+
+	//"github.com/segmentio/kafka-go"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
 type handlers struct {
-	group *echo.Group
-	log   logger.Logger
-	cfg   *config.Config
+	group    *echo.Group
+	log      logger.Logger
+	cfg      *config.Config
+	producer kafka2.Producer
+	tracer   *tracesdk.TracerProvider
 }
 
 func NewHandlers(group *echo.Group, log logger.Logger, cfg *config.Config) *handlers {
@@ -28,9 +33,14 @@ func NewHandlers(group *echo.Group, log logger.Logger, cfg *config.Config) *hand
 
 func (h *handlers) ParseGithub() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		println("here")
-		profile := "nktrr"
-		repository := "disrupt_old"
+		profile := c.QueryParam("profile")
+		repo := c.QueryParam("repo")
+
+		if profile == "" || repo == "" {
+			return c.String(400, "no profile/repo")
+		}
+
+		h.producer.PublishMessage(c)
 
 		topic := "parse-github"
 		partition := 0
@@ -41,17 +51,14 @@ func (h *handlers) ParseGithub() echo.HandlerFunc {
 		}
 
 		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		i, err := conn.WriteMessages(
-			kafka.Message{Value: []byte(profile + "/" + repository)},
+		_, err = conn.WriteMessages(
+			kafka.Message{Value: []byte(profile + "/" + repo)},
 		)
-		println("write ", strconv.Itoa(i))
 		if err != nil {
-			println("write err")
 			log.Fatal("failed to write messages:", err)
 		}
 
 		if err := conn.Close(); err != nil {
-			println("close writter")
 			log.Fatal("failed to close writer:", err)
 		}
 		// remove

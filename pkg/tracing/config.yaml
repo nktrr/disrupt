@@ -1,0 +1,6 @@
+url: fds
+hostPort: 4318
+enable: true
+logSpans: true
+environment: developing
+id: 1

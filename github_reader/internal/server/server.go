@@ -20,18 +20,17 @@ func (s *server) Run() {
 	partition := 0
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{"kafka:29092"},
-		Topic:     topic,
-		Partition: partition,
-		MaxBytes:  10e6, // 10MB
+		Brokers:     []string{"kafka:29092"},
+		StartOffset: kafka.LastOffset,
+		GroupID:     "consumer-group-1",
+		Topic:       topic,
+		Partition:   partition,
+		MaxBytes:    10e6, // 10MB
 	})
 	//r.SetOffset(42)
 
 	for {
-		println("start read")
-
 		m, err := r.ReadMessage(context.Background())
-		println("read")
 		if err != nil {
 			println(err.Error())
 			break

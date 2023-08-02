@@ -5,6 +5,7 @@ import (
 	"disrupt/api_gateway/config"
 	"disrupt/pkg/kafka"
 	"disrupt/pkg/logger"
+	"disrupt/pkg/tracing"
 	"github.com/labstack/echo"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ type server struct {
 	cfg      *config.Config
 	echo     *echo.Echo
 	handlers *handlers
+	producer kafka.Producer
 }
 
 func NewServer(log logger.Logger, cfg *config.Config) *server {
@@ -27,12 +29,19 @@ func NewServer(log logger.Logger, cfg *config.Config) *server {
 }
 
 func (s *server) Run() error {
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
-	kafkaProducer := kafka.NewProducer(s.log, s.cfg.Kafka.Brokers)
-	defer kafkaProducer.Close()
+	s.producer = kafka.NewProducer(s.log, s.cfg.Kafka.Brokers)
+	defer s.producer.Close()
 	s.handlers = NewHandlers(s.echo.Group(s.cfg.Http.BasePath), s.log, s.cfg)
 	s.handlers.MapRoutes()
+	tp, err := tracing.TracerProvider("http://localhost:14268/api/traces", s.cfg.ServiceName)
+	if err != nil {
+		s.log.Errorf("run tracing: %v", err)
+	}
+	s.handlers.tracer = tp
+	// ADD TRACING LOGIC IN HANDLERS
 	go func() {
 		if err := s.echo.Start(s.cfg.Http.Port); err != nil {
 			s.log.Errorf(" s.runHttpServer: %v", err)
