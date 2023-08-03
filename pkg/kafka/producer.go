@@ -2,29 +2,45 @@ package kafka
 
 import (
 	"context"
-	"disrupt/pkg/logger"
 	"github.com/segmentio/kafka-go"
+	"log"
+	"time"
 )
 
-type Producer interface {
-	PublishMessage(ctx context.Context, msgs ...kafka.Message) error
-	Close() error
+type Producer struct {
+	conn *kafka.Conn
 }
 
-type producer struct {
-	log     logger.Logger
-	brokers []string
-	w       *kafka.Writer
+func NewProducer(topic string) (*Producer, error) {
+	partition := 0
+	conn, err := kafka.DialLeader(context.Background(), "tcp", "kafka:29092", topic, partition)
+	if err != nil {
+		log.Fatal("failed to dial leader:", err)
+		return nil, err
+	}
+	err = conn.SetWriteDeadline(time.Time{})
+	if err != nil {
+		return nil, err
+	}
+	producer := &Producer{conn: conn}
+	return producer, err
 }
 
-func NewProducer(log logger.Logger, brokers []string) *producer {
-	return &producer{log: log, brokers: brokers, w: NewWriter(brokers, kafka.LoggerFunc(log.Errorf))}
+func (producer Producer) WriteMessage(message string) error {
+	_, err := producer.conn.Write([]byte(message))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (p *producer) PublishMessage(ctx context.Context, msgs ...kafka.Message) error {
-	return p.w.WriteMessages(ctx, msgs...)
+func (producer Producer) Close() {
+	err := producer.conn.Close()
+	if err != nil {
+		return
+	}
 }
 
-func (p *producer) Close() error {
-	return p.w.Close()
-}
+const (
+	ParseGithub = "parse-github"
+)

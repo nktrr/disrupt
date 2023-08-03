@@ -6,7 +6,7 @@ import (
 	kafka2 "disrupt/pkg/kafka"
 	"disrupt/pkg/logger"
 	"github.com/labstack/echo"
-	"github.com/segmentio/kafka-go"
+	"go.opentelemetry.io/otel"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 
 	//"github.com/segmentio/kafka-go"
@@ -16,11 +16,12 @@ import (
 )
 
 type handlers struct {
-	group    *echo.Group
-	log      logger.Logger
-	cfg      *config.Config
-	producer kafka2.Producer
-	tracer   *tracesdk.TracerProvider
+	group          *echo.Group
+	log            logger.Logger
+	cfg            *config.Config
+	producer       *kafka2.Producer
+	tracerProvider *tracesdk.TracerProvider
+	//tracer         trace.Tracer
 }
 
 func NewHandlers(group *echo.Group, log logger.Logger, cfg *config.Config) *handlers {
@@ -33,35 +34,40 @@ func NewHandlers(group *echo.Group, log logger.Logger, cfg *config.Config) *hand
 
 func (h *handlers) ParseGithub() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		println("parse ")
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		defer func(ctx context.Context) {
+			// Do not make the application hang when it is shutdown.
+			ctx, cancel = context.WithTimeout(ctx, time.Second*5)
+			defer cancel()
+			if err := h.tracerProvider.Shutdown(ctx); err != nil {
+				log.Fatal(err)
+			}
+		}(ctx)
+		println("defer")
+		tracer := h.tracerProvider.Tracer("ParseGithub")
+		ctx, span := tracer.Start(ctx, "foo")
+		println("ctx", ctx)
+		println("tracer span")
+		defer span.End()
 		profile := c.QueryParam("profile")
 		repo := c.QueryParam("repo")
 
 		if profile == "" || repo == "" {
 			return c.String(400, "no profile/repo")
 		}
-
-		h.producer.PublishMessage(c)
-
-		topic := "parse-github"
-		partition := 0
-
-		conn, err := kafka.DialLeader(context.Background(), "tcp", "kafka:29092", topic, partition)
+		Test(ctx)
+		err := h.producer.WriteMessage(profile + "/" + repo)
 		if err != nil {
-			log.Fatal("failed to dial leader:", err)
+			return c.String(400, err.Error())
 		}
-
-		conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-		_, err = conn.WriteMessages(
-			kafka.Message{Value: []byte(profile + "/" + repo)},
-		)
-		if err != nil {
-			log.Fatal("failed to write messages:", err)
-		}
-
-		if err := conn.Close(); err != nil {
-			log.Fatal("failed to close writer:", err)
-		}
-		// remove
 		return c.String(http.StatusOK, "PARSE OK")
 	}
+}
+
+func Test(ctx context.Context) {
+	tr := otel.Tracer("component-test")
+	_, span := tr.Start(ctx, "test")
+	defer span.End()
 }

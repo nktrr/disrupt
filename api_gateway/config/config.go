@@ -2,10 +2,10 @@ package config
 
 import (
 	"disrupt/pkg/constants"
-	"disrupt/pkg/kafka"
 	"disrupt/pkg/logger"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/segmentio/kafka-go"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -16,7 +16,6 @@ type Config struct {
 	ServiceName string         `mapstructure:"serviceName"`
 	Logger      *logger.Config `mapstructure:"logger"`
 	KafkaTopics KafkaTopics    `mapstructure:"kafkaTopics"`
-	Kafka       *kafka.Config  `mapstructure:"kafka"`
 	Http        Http           `mapstructure:"http"`
 }
 
@@ -64,10 +63,6 @@ func InitConfig() (*Config, error) {
 	httpPort := os.Getenv(constants.HttpPort)
 	if httpPort != "" {
 		cfg.Http.Port = httpPort
-	}
-	kafkaBrokers := os.Getenv(constants.KafkaBrokers)
-	if kafkaBrokers != "" {
-		cfg.Kafka.Brokers = []string{kafkaBrokers}
 	}
 
 	return cfg, nil
